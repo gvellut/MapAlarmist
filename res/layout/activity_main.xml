@@ -1,33 +1,30 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?><LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical" >
 
-    
+    <Button
+        android:id="@+android:id/buttonSetArea"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="buttonSetArea_onClick"
+        android:text="@string/set_area" />
     
     <Button
-        android:id="@+android:id/button1"
+        android:id="@+android:id/buttonSetRingtone"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/hello_world" />
-    
-    
+        android:onClick="buttonSetRingtone_onClick"
+        android:text="@string/set_ringtone" />
+
     <CheckBox
-        android:id="@+android:id/checkbox1" 
+        android:id="@+android:id/checkboxUseVibrate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/hello_world" />
-    
-    <ToggleButton
-        android:id="@+android:id/togglebutton1" 
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/hello_world" />
+        android:text="@string/use_vibrate" />
 
-
-    <TextView
-        android:id="@android:id/empty"
+    <ToggleButton android:checked="false"
+        android:id="@+android:id/togglebutton1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/hello_world" />

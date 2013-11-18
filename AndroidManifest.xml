@@ -43,7 +43,12 @@
         
         <activity
             android:name="com.vellut.geoalarm.GeofenceActivity"
-            android:label="@string/app_name" />
+            android:label="@string/app_name"
+            android:parentActivityName="com.vellut.geoalarm.MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.vellut.geoalarm.MainActivity" />
+        </activity>
     </application>
 
 </manifest>
