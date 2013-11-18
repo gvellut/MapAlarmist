@@ -2,10 +2,9 @@
 <resources>
 
     <string name="app_name">GeoAlarm</string>
-    <string name="action_settings">Settings</string>
-    <string name="hello_world">Hello world!</string>
-    <string name="set_area">Set area</string>
-    <string name="set_ringtone">Set Ringtone</string>
+    <string name="set_ringtone">Choose ringtone</string>
     <string name="use_vibrate">Vibrate</string>
-
+    <string name="ringtone_picker_title">Select ringtone for alarm</string>
+    <string name="action_current_location">Position</string>
+    
 </resources>

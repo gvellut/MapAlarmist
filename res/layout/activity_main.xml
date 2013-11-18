@@ -1,32 +1,35 @@
-<?xml version="1.0" encoding="utf-8"?><LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical" >
+    
+    <fragment
+        android:id="@+id/map"
+        android:layout_width="match_parent"
+        android:layout_height="0dip"
+        android:layout_weight="1"
+        android:layout_margin="5dp"
+        class="com.google.android.gms.maps.SupportMapFragment" />
 
     <Button
-        android:id="@+android:id/buttonSetArea"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="buttonSetArea_onClick"
-        android:text="@string/set_area" />
-    
-    <Button
-        android:id="@+android:id/buttonSetRingtone"
+        android:id="@+id/buttonSetRingtone"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="buttonSetRingtone_onClick"
         android:text="@string/set_ringtone" />
 
     <CheckBox
-        android:id="@+android:id/checkboxUseVibrate"
+        android:onClick="checkboxUseVibrate_onClick"
+        android:id="@+id/checkboxUseVibrate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/use_vibrate" />
 
-    <ToggleButton android:checked="false"
-        android:id="@+android:id/togglebutton1"
+    <ToggleButton android:onClick="togglebuttonOnOffAlarm_onClick"
+        android:id="@+id/togglebuttonOnOffAlarm"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/hello_world" />
+        android:checked="false" />
 
 </LinearLayout>

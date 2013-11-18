@@ -5,7 +5,7 @@
         AppBaseTheme from res/values/styles.xml on API 11+ devices.
     -->
     <style name="AppBaseTheme" parent="android:Theme.Holo.Light">
-        <!-- API 11 theme customizations can go here. -->
+        <item name="current_location_icon">@drawable/current_location_light</item>
     </style>
 
 </resources>
