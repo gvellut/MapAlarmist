@@ -36,7 +36,7 @@ public class MainActivity extends FragmentActivity implements
 
 	private final static int RINGTONE_PICKER_REQUEST_CODE = 1;
 	private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 2;
-	private final static String PREFERENCES_FILE_NAME = "Preferences";
+	private final static String PREFERENCES_FILE_NAME = "com.vellut.geoalarm.Preferences";
 	private final static String PREF_IS_FIRST_TIME_RUN = "isFirstTimeRun";
 	private final static String PREF_RINGTONE_URI = "ringtoneUri";
 	private final static String PREF_NORTH_LAT = "northLat";
@@ -82,11 +82,10 @@ public class MainActivity extends FragmentActivity implements
 		super.onStart();
 
 		locationClient.connect();
-		
 
 		Log.d(GeoAlarmUtils.APPTAG, "START");
 	}
-
+	
 	@Override
 	protected void onResume() {
 		super.onResume();
@@ -95,11 +94,19 @@ public class MainActivity extends FragmentActivity implements
 	}
 
 	@Override
+	protected void onPause() {
+		super.onPause();
+		
+		savePreferences();
+		
+		Log.d(GeoAlarmUtils.APPTAG, "PAUSE");
+	}
+
+	@Override
 	protected void onStop() {
 		super.onStop();
 
 		locationClient.disconnect();
-		savePreferences();
 		
 		Log.d(GeoAlarmUtils.APPTAG, "STOP");
 	}
