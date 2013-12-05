@@ -25,6 +25,10 @@ import android.view.View;
 import android.widget.CheckBox;
 import android.widget.ToggleButton;
 
+import com.google.analytics.tracking.android.EasyTracker;
+import com.google.analytics.tracking.android.MapBuilder;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
 import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
@@ -78,6 +82,11 @@ public class MainActivity extends FragmentActivity implements
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		// FIXME Setup Alarm on Boot
+		// FIXME add menu options Stop Alarm (needs notification id)
+		// FIXME remove alarm when clicking on Turn off Alarm
+		// FIXME current position : do not change zoom if > than the fixed one
+		
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
@@ -89,6 +98,7 @@ public class MainActivity extends FragmentActivity implements
 		checkAlarm();
 		restorePreferences();
 		initializeUI();
+		loadAd();
 
 		Log.d(GeoAlarmUtils.APPTAG, "CREATE");
 	}
@@ -100,6 +110,7 @@ public class MainActivity extends FragmentActivity implements
 		locationClient.connect();
 
 		Log.d(GeoAlarmUtils.APPTAG, "START");
+		EasyTracker.getInstance(this).activityStart(this);
 	}
 
 	@Override
@@ -125,17 +136,16 @@ public class MainActivity extends FragmentActivity implements
 		locationClient.disconnect();
 
 		Log.d(GeoAlarmUtils.APPTAG, "STOP");
+		EasyTracker.getInstance(this).activityStop(this);
 	}
 
 	private void initializeUI() {
 		if (isFirstTimeRun) {
-			// TODO show Dialog to explain what to do
+			showWelcomeDialog();
 
 			// Actual zoom will be performed when location service
 			// is connected
 			zoomOnCurrentPosition = true;
-			
-			showWelcomeDialog();
 
 			isFirstTimeRun = false;
 		} else {
@@ -169,6 +179,15 @@ public class MainActivity extends FragmentActivity implements
 		}
 	}
 
+	private void loadAd() {
+		AdView adView = (AdView)this.findViewById(R.id.adView);
+	    AdRequest adRequest = new AdRequest.Builder()
+	    .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
+	    .addTestDevice("1CDF12C571A695FA0214F29BC40703DA")
+	    .build();
+	    adView.loadAd(adRequest);
+	}
+	
 	private void checkAlarm() {
 		String action = getIntent().getAction();
 		if (TextUtils.equals(action, GeoAlarmUtils.ACTION_STOP_ALARM)) {
@@ -261,10 +280,18 @@ public class MainActivity extends FragmentActivity implements
 	}
 
 	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		menu.findItem(R.id.action_current_location).setEnabled(!isAlarmOn);
+		return true;
+	}
+
+	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case R.id.action_current_location:
 			zoomOnCurrentPosition();
+			trackEvent("ui_action", "button_press", "zoom_on_current_position",
+					null);
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);
@@ -293,6 +320,9 @@ public class MainActivity extends FragmentActivity implements
 		intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true);
 
 		startActivityForResult(intent, RINGTONE_PICKER_REQUEST_CODE);
+		
+		trackEvent("ui_action", "button_press", "set_ringtone",
+				null);
 	}
 
 	public void togglebuttonOnOffAlarm_onClick(View v) {
@@ -318,6 +348,11 @@ public class MainActivity extends FragmentActivity implements
 
 			enableUI();
 		}
+
+		supportInvalidateOptionsMenu();
+		
+		trackEvent("ui_action", "button_press", "set_alarm",
+				null);
 	}
 
 	private Geofence buildGeofence() {
@@ -345,6 +380,9 @@ public class MainActivity extends FragmentActivity implements
 
 	public void checkboxUseVibrate_onClick(View v) {
 		isUseVibrate = ((CheckBox) v).isChecked();
+		
+		trackEvent("ui_action", "button_press", "use_vibrate",
+				null);
 	}
 
 	private void disableUI() {
@@ -367,7 +405,7 @@ public class MainActivity extends FragmentActivity implements
 		gMap.getUiSettings().setCompassEnabled(false);
 		gMap.getUiSettings().setZoomControlsEnabled(false);
 	}
-	
+
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		switch (requestCode) {
@@ -497,19 +535,19 @@ public class MainActivity extends FragmentActivity implements
 				this, CONNECTION_FAILURE_RESOLUTION_REQUEST);
 		showDialog(errorDialog);
 	}
-	
+
 	private void showWelcomeDialog() {
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage(R.string.welcome)
-               .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                   public void onClick(DialogInterface dialog, int id) {
-                       
-                   }
-               });
-        // Create the AlertDialog object and return it
-        showDialog(builder.create());
+		builder.setMessage(R.string.welcome).setPositiveButton(R.string.ok,
+				new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int id) {
+
+					}
+				});
+		// Create the AlertDialog object and return it
+		showDialog(builder.create());
 	}
-	
+
 	private void showDialog(Dialog errorDialog) {
 		if (errorDialog != null) {
 			GeoAlarmDialogFragment errorFragment = new GeoAlarmDialogFragment();
@@ -539,5 +577,14 @@ public class MainActivity extends FragmentActivity implements
 		public Dialog onCreateDialog(Bundle savedInstanceState) {
 			return mDialog;
 		}
+	}
+
+	// Analytics
+
+	private void trackEvent(String category, String action, String label,
+			Long value) {
+		EasyTracker easyTracker = EasyTracker.getInstance(this);
+		easyTracker.send(MapBuilder.createEvent(category, action, label, value)
+				.build());
 	}
 }

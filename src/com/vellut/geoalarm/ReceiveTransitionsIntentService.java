@@ -27,10 +27,8 @@ public class ReceiveTransitionsIntentService extends IntentService {
 	@Override
 	protected void onHandleIntent(Intent intent) {
 
-		Log.d(GeoAlarmUtils.APPTAG, "HandleIntent");
+		Log.d(GeoAlarmUtils.APPTAG, "ReceiveTranitionsItentService HandleIntent");
 
-		// Create a local broadcast Intent
-		Intent broadcastIntent = new Intent();
 
 		// First check for errors
 		if (LocationClient.hasError(intent)) {
