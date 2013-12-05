@@ -1,7 +1,13 @@
 package com.vellut.geoalarm;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
@@ -11,6 +17,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -19,9 +26,14 @@ import android.widget.CheckBox;
 import android.widget.ToggleButton;
 
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesClient;
+import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
+import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
 import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.LocationClient;
+import com.google.android.gms.location.LocationClient.OnAddGeofencesResultListener;
+import com.google.android.gms.location.LocationClient.OnRemoveGeofencesResultListener;
+import com.google.android.gms.location.LocationStatusCodes;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnCameraChangeListener;
@@ -31,8 +43,8 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 
 public class MainActivity extends FragmentActivity implements
-		GooglePlayServicesClient.ConnectionCallbacks,
-		GooglePlayServicesClient.OnConnectionFailedListener {
+		ConnectionCallbacks, OnConnectionFailedListener,
+		OnAddGeofencesResultListener, OnRemoveGeofencesResultListener {
 
 	private final static int RINGTONE_PICKER_REQUEST_CODE = 1;
 	private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 2;
@@ -58,6 +70,8 @@ public class MainActivity extends FragmentActivity implements
 
 	private LocationClient locationClient;
 
+	private PendingIntent transitionPendingIntent;
+
 	// Note that this may be null if the Google Play services APK is not
 	// available.
 	private GoogleMap gMap;
@@ -70,10 +84,12 @@ public class MainActivity extends FragmentActivity implements
 		locationClient = new LocationClient(this, this, this);
 		gMap = ((SupportMapFragment) getSupportFragmentManager()
 				.findFragmentById(R.id.map)).getMap();
+		disableNonScrollGestures();
 
+		checkAlarm();
 		restorePreferences();
 		initializeUI();
-		
+
 		Log.d(GeoAlarmUtils.APPTAG, "CREATE");
 	}
 
@@ -85,20 +101,20 @@ public class MainActivity extends FragmentActivity implements
 
 		Log.d(GeoAlarmUtils.APPTAG, "START");
 	}
-	
+
 	@Override
 	protected void onResume() {
 		super.onResume();
-		
+
 		Log.d(GeoAlarmUtils.APPTAG, "RESUME");
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
-		
+
 		savePreferences();
-		
+
 		Log.d(GeoAlarmUtils.APPTAG, "PAUSE");
 	}
 
@@ -107,17 +123,19 @@ public class MainActivity extends FragmentActivity implements
 		super.onStop();
 
 		locationClient.disconnect();
-		
+
 		Log.d(GeoAlarmUtils.APPTAG, "STOP");
 	}
 
 	private void initializeUI() {
 		if (isFirstTimeRun) {
-			// show Dialog to explain what to do
+			// TODO show Dialog to explain what to do
 
 			// Actual zoom will be performed when location service
 			// is connected
 			zoomOnCurrentPosition = true;
+			
+			showWelcomeDialog();
 
 			isFirstTimeRun = false;
 		} else {
@@ -138,20 +156,25 @@ public class MainActivity extends FragmentActivity implements
 			}
 
 			// set vibrate mode
-			CheckBox checkboxUseVibrate = (CheckBox) 
-					findViewById(R.id.checkboxUseVibrate);
+			CheckBox checkboxUseVibrate = (CheckBox) findViewById(R.id.checkboxUseVibrate);
 			checkboxUseVibrate.setChecked(isUseVibrate);
 
 			// set toggle button state
-			ToggleButton togglebuttonOnOffAlarm = (ToggleButton) 
-					findViewById(R.id.togglebuttonOnOffAlarm);
+			ToggleButton togglebuttonOnOffAlarm = (ToggleButton) findViewById(R.id.togglebuttonOnOffAlarm);
 			togglebuttonOnOffAlarm.setChecked(isAlarmOn);
 
 			if (isAlarmOn) {
 				disableUI();
 			}
 		}
+	}
 
+	private void checkAlarm() {
+		String action = getIntent().getAction();
+		if (TextUtils.equals(action, GeoAlarmUtils.ACTION_STOP_ALARM)) {
+			Log.d(GeoAlarmUtils.APPTAG, "StopAlarm");
+			stopAlarm();
+		}
 	}
 
 	private void restorePreferences() {
@@ -170,14 +193,28 @@ public class MainActivity extends FragmentActivity implements
 					north, east));
 		}
 
-		String ringtoneUri = settings.getString(PREF_RINGTONE_URI,
-				RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-						.toString());
-		if (ringtoneUri == null) {
-			this.ringtoneUri = null;
+		if (isFirstTimeRun) {
+			// Default alarm sound
+			Uri defaultUri = RingtoneManager
+					.getDefaultUri(RingtoneManager.TYPE_ALARM);
+			if (defaultUri == null) {
+				defaultUri = RingtoneManager
+						.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+				if (defaultUri == null) {
+					defaultUri = RingtoneManager
+							.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+				}
+			}
+			this.ringtoneUri = defaultUri;
 		} else {
-			this.ringtoneUri = Uri.parse(ringtoneUri);
+			String sRingtoneUri = settings.getString(PREF_RINGTONE_URI, null);
+			if (sRingtoneUri == null) {
+				this.ringtoneUri = null;
+			} else {
+				this.ringtoneUri = Uri.parse(sRingtoneUri);
+			}
 		}
+
 		this.isUseVibrate = settings.getBoolean(PREF_USE_VIBRATE, false);
 
 		this.isAlarmOn = settings.getBoolean(PREF_IS_ALARM_ON, false);
@@ -206,7 +243,11 @@ public class MainActivity extends FragmentActivity implements
 				Double.toString(zone.southwest.longitude));
 		editor.putString(PREF_EAST_LON,
 				Double.toString(zone.northeast.longitude));
-		editor.putString(PREF_RINGTONE_URI, ringtoneUri.toString());
+		if (ringtoneUri != null) {
+			editor.putString(PREF_RINGTONE_URI, ringtoneUri.toString());
+		} else {
+			editor.putString(PREF_RINGTONE_URI, null);
+		}
 		editor.putBoolean(PREF_USE_VIBRATE, isUseVibrate);
 		editor.putBoolean(PREF_IS_ALARM_ON, isAlarmOn);
 
@@ -218,21 +259,21 @@ public class MainActivity extends FragmentActivity implements
 		getMenuInflater().inflate(R.menu.main, menu);
 		return true;
 	}
-	
+
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-	    switch (item.getItemId()) {
-	    case R.id.action_current_location:
-	        zoomOnCurrentPosition();
-	        return true;
-	    default:
-	        return super.onOptionsItemSelected(item);
-	    }
+		switch (item.getItemId()) {
+		case R.id.action_current_location:
+			zoomOnCurrentPosition();
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		}
 	}
 
 	private void zoomOnCurrentPosition() {
 		// If Google Play Services is available
-		if (servicesConnected()) {
+		if (isGooglePlayServicesConnected()) {
 			Location currentLocation = locationClient.getLastLocation();
 			LatLng latLng = new LatLng(currentLocation.getLatitude(),
 					currentLocation.getLongitude());
@@ -249,9 +290,8 @@ public class MainActivity extends FragmentActivity implements
 				RingtoneManager.TYPE_ALARM);
 		intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
 				ringtoneUri);
-		intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT,
-						false);
-		
+		intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true);
+
 		startActivityForResult(intent, RINGTONE_PICKER_REQUEST_CODE);
 	}
 
@@ -259,31 +299,75 @@ public class MainActivity extends FragmentActivity implements
 		isAlarmOn = ((ToggleButton) v).isChecked();
 
 		if (isAlarmOn) {
-			// TODO start Alarm check
-			
+			if (!isGooglePlayServicesConnected()) {
+				return;
+			}
+
+			transitionPendingIntent = getTransitionPendingIntent();
+			List<Geofence> geofences = new ArrayList<Geofence>();
+			geofences.add(buildGeofence());
+			locationClient.addGeofences(geofences, transitionPendingIntent,
+					this);
+
 			disableUI();
 		} else {
-			// TODO stop alarm check
-		
+			List<String> geofenceIds = new ArrayList<String>();
+			geofenceIds.add(GeoAlarmUtils.GEOFENCE_REQUEST_ID);
+			locationClient.removeGeofences(geofenceIds, this);
+			transitionPendingIntent = null;
+
 			enableUI();
 		}
+	}
+
+	private Geofence buildGeofence() {
+		LatLngBounds latLngBounds = gMap.getProjection().getVisibleRegion().latLngBounds;
+		LatLng center = latLngBounds.getCenter();
+		double dLng = Math.abs(latLngBounds.northeast.longitude
+				- latLngBounds.southwest.longitude);
+		double dLat = Math.abs(latLngBounds.northeast.latitude
+				- latLngBounds.southwest.latitude);
+		float radius = (float) Math.min(dLng, dLat);
+		radius *= 111320; // Length of a degree in meter at equator
+		return new Geofence.Builder()
+				.setRequestId(GeoAlarmUtils.GEOFENCE_REQUEST_ID)
+				.setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+				.setExpirationDuration(Long.MAX_VALUE)
+				.setCircularRegion(center.latitude, center.longitude, radius)
+				.build();
+
+	}
+
+	private void stopAlarm() {
+		// Stop
+		// nothing to do
 	}
 
 	public void checkboxUseVibrate_onClick(View v) {
 		isUseVibrate = ((CheckBox) v).isChecked();
 	}
-	
+
 	private void disableUI() {
 		// TODO disable map fragment
+		gMap.getUiSettings().setAllGesturesEnabled(false);
 		findViewById(R.id.checkboxUseVibrate).setEnabled(false);
 		findViewById(R.id.buttonSetRingtone).setEnabled(false);
 	}
-	
+
 	private void enableUI() {
 		findViewById(R.id.checkboxUseVibrate).setEnabled(true);
 		findViewById(R.id.buttonSetRingtone).setEnabled(true);
+		gMap.getUiSettings().setAllGesturesEnabled(true);
+		disableNonScrollGestures();
 	}
 
+	private void disableNonScrollGestures() {
+		gMap.getUiSettings().setRotateGesturesEnabled(false);
+		gMap.getUiSettings().setTiltGesturesEnabled(false);
+		gMap.getUiSettings().setCompassEnabled(false);
+		gMap.getUiSettings().setZoomControlsEnabled(false);
+	}
+	
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		switch (requestCode) {
@@ -306,6 +390,50 @@ public class MainActivity extends FragmentActivity implements
 		}
 	}
 
+	private PendingIntent getTransitionPendingIntent() {
+		Intent intent = new Intent(this, ReceiveTransitionsIntentService.class);
+		if (ringtoneUri != null) {
+			intent.putExtra(GeoAlarmUtils.EXTRA_RINGTONE_URI,
+					ringtoneUri.toString());
+		}
+		intent.putExtra(GeoAlarmUtils.EXTRA_USE_VIBRATE, isUseVibrate);
+
+		return PendingIntent.getService(this, 0, intent,
+				PendingIntent.FLAG_UPDATE_CURRENT);
+	}
+
+	/*
+	 * Handle the result of adding the geofences
+	 */
+	@Override
+	public void onAddGeofencesResult(int statusCode, String[] geofenceRequestIds) {
+		Log.d(GeoAlarmUtils.APPTAG, "AddGeofencesResult");
+		if (statusCode == LocationStatusCodes.SUCCESS) {
+			Log.d(GeoAlarmUtils.APPTAG, "AddGeofencesResult Success!!!");
+		} else {
+			Log.d(GeoAlarmUtils.APPTAG, "AddGeofencesResult Error!!!");
+		}
+	}
+
+	@Override
+	public void onRemoveGeofencesByPendingIntentResult(int statusCode,
+			PendingIntent transitionPendingIntent) {
+		// never called
+	}
+
+	@Override
+	public void onRemoveGeofencesByRequestIdsResult(int statusCode,
+			String[] geofenceIds) {
+		Log.d(GeoAlarmUtils.APPTAG, "RemoveGeofencesByRequestIdsResult");
+		if (statusCode == LocationStatusCodes.SUCCESS) {
+			Log.d(GeoAlarmUtils.APPTAG,
+					"RemoveGeofencesByRequestIdsResult Success!!!");
+		} else {
+			Log.d(GeoAlarmUtils.APPTAG,
+					"RemoveGeofencesByRequestIdsResult Error!!!");
+		}
+	}
+
 	/**
 	 * Google Play Services
 	 */
@@ -314,6 +442,8 @@ public class MainActivity extends FragmentActivity implements
 	// finishes successfully.
 	@Override
 	public void onConnected(Bundle dataBundle) {
+		Log.e(GeoAlarmUtils.APPTAG, "Connected to Location Services");
+
 		if (zoomOnCurrentPosition) {
 			zoomOnCurrentPosition();
 			zoomOnCurrentPosition = false;
@@ -324,7 +454,7 @@ public class MainActivity extends FragmentActivity implements
 	// drops because of an error.
 	@Override
 	public void onDisconnected() {
-		
+		Log.e(GeoAlarmUtils.APPTAG, "Disconnected from Location Services");
 	}
 
 	@Override
@@ -345,7 +475,7 @@ public class MainActivity extends FragmentActivity implements
 		}
 	}
 
-	private boolean servicesConnected() {
+	private boolean isGooglePlayServicesConnected() {
 		// Check that Google Play services is available
 		int resultCode = GooglePlayServicesUtil
 				.isGooglePlayServicesAvailable(this);
@@ -356,27 +486,33 @@ public class MainActivity extends FragmentActivity implements
 		} else {
 			// Google Play services was not available for some reason
 			// Display an error dialog
-			Dialog dialog = GooglePlayServicesUtil.getErrorDialog(resultCode,
-					this, 0);
-			if (dialog != null) {
-				ErrorDialogFragment errorFragment = new ErrorDialogFragment();
-				errorFragment.setDialog(dialog);
-				errorFragment.show(getSupportFragmentManager(),
-						GeoAlarmUtils.APPTAG);
-			}
+			showErrorDialog(resultCode);
 			return false;
 		}
 	}
 
 	private void showErrorDialog(int errorCode) {
-
 		// Get the error dialog from Google Play services
 		Dialog errorDialog = GooglePlayServicesUtil.getErrorDialog(errorCode,
 				this, CONNECTION_FAILURE_RESOLUTION_REQUEST);
-
-		// If Google Play services can provide an error dialog
+		showDialog(errorDialog);
+	}
+	
+	private void showWelcomeDialog() {
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.welcome)
+               .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                   public void onClick(DialogInterface dialog, int id) {
+                       
+                   }
+               });
+        // Create the AlertDialog object and return it
+        showDialog(builder.create());
+	}
+	
+	private void showDialog(Dialog errorDialog) {
 		if (errorDialog != null) {
-			ErrorDialogFragment errorFragment = new ErrorDialogFragment();
+			GeoAlarmDialogFragment errorFragment = new GeoAlarmDialogFragment();
 			errorFragment.setDialog(errorDialog);
 			errorFragment.show(getSupportFragmentManager(),
 					GeoAlarmUtils.APPTAG);
@@ -384,11 +520,11 @@ public class MainActivity extends FragmentActivity implements
 	}
 
 	// Define a DialogFragment that displays the error dialog
-	public static class ErrorDialogFragment extends DialogFragment {
+	public static class GeoAlarmDialogFragment extends DialogFragment {
 		private Dialog mDialog;
 
 		// Default constructor. Sets the dialog field to null
-		public ErrorDialogFragment() {
+		public GeoAlarmDialogFragment() {
 			super();
 			mDialog = null;
 		}
@@ -404,5 +540,4 @@ public class MainActivity extends FragmentActivity implements
 			return mDialog;
 		}
 	}
-
 }

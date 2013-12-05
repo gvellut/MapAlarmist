@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">GeoAlarm</string>
+    <string name="app_name">Safe Zzz</string>
     <string name="set_ringtone">Choose ringtone</string>
     <string name="use_vibrate">Vibrate</string>
     <string name="ringtone_picker_title">Select ringtone for alarm</string>
     <string name="action_current_location">Position</string>
-    
+    <string name="geofence_transition_notification_text">Click to return to app</string>
+    <string name="geofence_transition_notification_title">Safe Zzz alarm triggered</string>
+    <string name="geofence_transition_error_detail">Geofencing Error: %d</string>
+    <string name="welcome">Welcome to Safe Zzz.\n\nUse the map to select the area where the alarm should be triggered and select an alarm sound.\n\nPress the "Set Alarm" button when ready.</string>
+    <string name="ok">OK</string>
+    <string name="set_alarm">Set Alarm</string>
+    <string name="disable_alarm">Alarm is On</string>
+
 </resources>

@@ -30,6 +30,8 @@
         android:id="@+id/togglebuttonOnOffAlarm"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:textOff="@string/set_alarm"
+        android:textOn="@string/disable_alarm"
         android:checked="false" />
 
 </LinearLayout>
