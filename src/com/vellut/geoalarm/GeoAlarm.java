@@ -128,14 +128,14 @@ public class GeoAlarm {
 
 	private PendingIntent getTransitionPendingIntent(Context context) {
 		Intent intent = new Intent(context,
-				ReceiveTransitionsIntentService.class);
+				ReceiveTransitionsBroadcastReceiver.class);
 		if (ringtoneUri != null) {
 			intent.putExtra(GeoAlarmUtils.EXTRA_RINGTONE_URI,
 					ringtoneUri.toString());
 		}
 		intent.putExtra(GeoAlarmUtils.EXTRA_USE_VIBRATE, isUseVibrate);
 
-		return PendingIntent.getService(context, 0, intent,
+		return PendingIntent.getBroadcast(context, 0, intent,
 				PendingIntent.FLAG_UPDATE_CURRENT);
 	}
 

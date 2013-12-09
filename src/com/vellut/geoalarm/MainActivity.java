@@ -235,6 +235,7 @@ public class MainActivity extends FragmentActivity implements
 
 			disableUI();
 		} else {
+			geoAlarm.savePreferences(this);
 			geoAlarm.disableAlarm(this, locationClient, this);
 
 			enableUI();
