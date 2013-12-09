@@ -26,9 +26,7 @@ public class ReceiveTransitionsIntentService extends IntentService {
 
 	@Override
 	protected void onHandleIntent(Intent intent) {
-
-		Log.d(GeoAlarmUtils.APPTAG, "ReceiveTranitionsItentService HandleIntent");
-
+		Log.d(GeoAlarmUtils.APPTAG, "ReceiveTransitionsItentService HandleIntent");
 
 		// First check for errors
 		if (LocationClient.hasError(intent)) {
@@ -96,7 +94,7 @@ public class ReceiveTransitionsIntentService extends IntentService {
 		NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
 		// Issue the notification
-		mNotificationManager.notify(0, builder.build());
+		mNotificationManager.notify(GeoAlarmUtils.GEOFENCE_NOTIFICATION_ID, builder.build());
 	}
 
 }
