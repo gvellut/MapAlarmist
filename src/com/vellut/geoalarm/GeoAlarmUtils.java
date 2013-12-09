@@ -10,7 +10,10 @@ public class GeoAlarmUtils {
 	public static final int GEOFENCE_NOTIFICATION_ID = 1;
 	
 	public static final String EXTRA_USE_VIBRATE = "UseVibrate";
-	public static final String EXTRA_RINGTONE_URI =  "RingtoneUri";
+	public static final String EXTRA_RINGTONE_URI = "RingtoneUri";
+	public static final String EXTRA_ALARM_SET_TIME = "AlarmSetTime";
+	
+	public static final long MIN_DTIME = 5000;
 	
 	public final static int RINGTONE_PICKER_REQUEST_CODE = 1;
 	public final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 2;

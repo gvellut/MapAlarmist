@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.SystemClock;
 import android.util.Log;
 
 import com.google.android.gms.location.Geofence;
@@ -117,6 +118,7 @@ public class GeoAlarm {
 		geofences.add(buildGeofence());
 		locationClient.addGeofences(geofences, transitionPendingIntent,
 				listener);
+		
 	}
 
 	public void disableAlarm(Context context, LocationClient locationClient,
@@ -134,6 +136,7 @@ public class GeoAlarm {
 					ringtoneUri.toString());
 		}
 		intent.putExtra(GeoAlarmUtils.EXTRA_USE_VIBRATE, isUseVibrate);
+		intent.putExtra(GeoAlarmUtils.EXTRA_ALARM_SET_TIME, SystemClock.elapsedRealtime());
 
 		return PendingIntent.getBroadcast(context, 0, intent,
 				PendingIntent.FLAG_UPDATE_CURRENT);

@@ -58,8 +58,6 @@ public class MainActivity extends FragmentActivity implements
 	protected void onCreate(Bundle savedInstanceState) {
 		// FIXME add menu options Stop Alarm (needs notification id)
 		// FIXME remove notification when clicking on Turn off Alarm
-		// FIXME add time set for alarm + check dans
-		// receivetransitionsintentservice
 		// FIXME test for wifi loc on
 		// Replace toggebutton with switch
 
@@ -230,13 +228,13 @@ public class MainActivity extends FragmentActivity implements
 
 		if (geoAlarm.isAlarmOn) {
 			geoAlarm.zone = gMap.getProjection().getVisibleRegion().latLngBounds;
-			geoAlarm.savePreferences(this);
 			geoAlarm.setAlarm(this, locationClient, this);
+			geoAlarm.savePreferences(this);
 
 			disableUI();
 		} else {
-			geoAlarm.savePreferences(this);
 			geoAlarm.disableAlarm(this, locationClient, this);
+			geoAlarm.savePreferences(this);
 
 			enableUI();
 		}

@@ -10,6 +10,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.support.v4.content.LocalBroadcastManager;
@@ -26,7 +27,8 @@ public class ReceiveTransitionsIntentService extends IntentService {
 
 	@Override
 	protected void onHandleIntent(Intent intent) {
-		Log.d(GeoAlarmUtils.APPTAG, "ReceiveTransitionsItentService HandleIntent");
+		Log.d(GeoAlarmUtils.APPTAG,
+				"ReceiveTransitionsItentService HandleIntent");
 
 		// First check for errors
 		if (LocationClient.hasError(intent)) {
@@ -39,14 +41,23 @@ public class ReceiveTransitionsIntentService extends IntentService {
 			int transition = LocationClient.getGeofenceTransition(intent);
 			// Test that a valid transition was reported
 			if (transition == Geofence.GEOFENCE_TRANSITION_ENTER) {
-				Log.d(GeoAlarmUtils.APPTAG,"GeoAlarm triggered");
-				boolean isUseVbirate = intent.getExtras().getBoolean(GeoAlarmUtils.EXTRA_USE_VIBRATE);
-				String ringtoneUri = intent.getExtras().getString(GeoAlarmUtils.EXTRA_RINGTONE_URI);
-				sendNotification(ringtoneUri, isUseVbirate);
+				Log.d(GeoAlarmUtils.APPTAG, "GeoAlarm triggered");
+				long alarmSetTime = intent.getExtras().getLong(
+						GeoAlarmUtils.EXTRA_ALARM_SET_TIME);
+				long currentTime = SystemClock.elapsedRealtime();
+				if (currentTime - alarmSetTime > GeoAlarmUtils.MIN_DTIME) {
+					boolean isUseVbirate = intent.getExtras().getBoolean(
+							GeoAlarmUtils.EXTRA_USE_VIBRATE);
+					String ringtoneUri = intent.getExtras().getString(
+							GeoAlarmUtils.EXTRA_RINGTONE_URI);
+					sendNotification(ringtoneUri, isUseVbirate);
+				}
 			}
 		}
+
+		ReceiveTransitionsBroadcastReceiver.completeWakefulIntent(intent);
 	}
-	
+
 	private void sendNotification(String ringtoneUri, boolean isUseVibrate) {
 
 		// Create an explicit content Intent that starts the main Activity
@@ -75,26 +86,28 @@ public class ReceiveTransitionsIntentService extends IntentService {
 		// Set the notification contents
 		builder.setSmallIcon(R.drawable.ic_notification)
 				.setContentTitle(
-						getString(
-								R.string.geofence_transition_notification_title))
+						getString(R.string.geofence_transition_notification_title))
 				.setContentText(
 						getString(R.string.geofence_transition_notification_text))
 				.setContentIntent(notificationPendingIntent)
 				.setAutoCancel(true);
-		
-		if(ringtoneUri != null) {
-			builder.setSound(Uri.parse(ringtoneUri), Notification.STREAM_DEFAULT);
+
+		if (ringtoneUri != null) {
+			builder.setSound(Uri.parse(ringtoneUri),
+					Notification.STREAM_DEFAULT);
 		}
-		
-		if(isUseVibrate) {
-			builder.setVibrate(new long[]{0, 200, 1000, 200, 1000,200, 1000,200, 1000});
+
+		if (isUseVibrate) {
+			builder.setVibrate(new long[] { 0, 200, 1000, 200, 1000, 200, 1000,
+					200, 1000 });
 		}
 
 		// Get an instance of the Notification manager
 		NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
 		// Issue the notification
-		mNotificationManager.notify(GeoAlarmUtils.GEOFENCE_NOTIFICATION_ID, builder.build());
+		mNotificationManager.notify(GeoAlarmUtils.GEOFENCE_NOTIFICATION_ID,
+				builder.build());
 	}
 
 }

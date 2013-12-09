@@ -45,6 +45,7 @@ public class GeoAlarmBootService extends Service implements
 		// setup alarm
 		try {
 			geoAlarm.setAlarm(this, locationClient, this);
+			geoAlarm.savePreferences(this);
 		} catch (Exception e) {
 			Log.e(GeoAlarmUtils.APPTAG, "Error setting alarm", e);
 			
