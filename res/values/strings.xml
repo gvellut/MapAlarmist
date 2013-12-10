@@ -9,9 +9,9 @@
     <string name="geofence_transition_notification_text">Click to return to app</string>
     <string name="geofence_transition_notification_title">Safe Zzz alarm triggered</string>
     <string name="geofence_transition_error_detail">Geofencing Error: %d</string>
-    <string name="welcome">Welcome to Safe Zzz.\n\nUse the map to select the area where the alarm should be triggered and select an alarm sound.\n\nPress the "Set Alarm" button when ready.</string>
+    <string name="welcome">Welcome to Safe Zzz.\n\nUse the map to select the area where the alarm should be triggered and select an alarm sound.\n\nFlip the switch at the bottom when ready.</string>
     <string name="ok">OK</string>
-    <string name="set_alarm">Set Alarm</string>
-    <string name="disable_alarm">Alarm is On</string>
+    <string name="set_alarm">OFF</string>
+    <string name="disable_alarm">ON</string>
 
 </resources>

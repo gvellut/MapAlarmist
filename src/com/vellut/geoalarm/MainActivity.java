@@ -17,7 +17,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.CheckBox;
-import android.widget.ToggleButton;
+import android.widget.CompoundButton;
+import android.widget.Switch;
 
 import com.google.analytics.tracking.android.EasyTracker;
 import com.google.analytics.tracking.android.MapBuilder;
@@ -27,7 +28,6 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
 import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.LocationClient;
 import com.google.android.gms.location.LocationClient.OnAddGeofencesResultListener;
 import com.google.android.gms.location.LocationClient.OnRemoveGeofencesResultListener;
@@ -38,7 +38,6 @@ import com.google.android.gms.maps.GoogleMap.OnCameraChangeListener;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 
 public class MainActivity extends FragmentActivity implements
 		ConnectionCallbacks, OnConnectionFailedListener,
@@ -59,7 +58,6 @@ public class MainActivity extends FragmentActivity implements
 		// FIXME add menu options Stop Alarm (needs notification id)
 		// FIXME remove notification when clicking on Turn off Alarm
 		// FIXME test for wifi loc on
-		// Replace toggebutton with switch
 
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
@@ -111,6 +109,8 @@ public class MainActivity extends FragmentActivity implements
 	}
 
 	private void initializeUI() {
+		Switch onOffAlarm = (Switch) findViewById(R.id.switchOnOffAlarm);
+
 		if (geoAlarm.isFirstTimeRun) {
 			showWelcomeDialog();
 
@@ -141,14 +141,23 @@ public class MainActivity extends FragmentActivity implements
 			checkboxUseVibrate.setChecked(geoAlarm.isUseVibrate);
 
 			// set toggle button state
-			ToggleButton togglebuttonOnOffAlarm = (ToggleButton) findViewById(R.id.togglebuttonOnOffAlarm);
-			togglebuttonOnOffAlarm.setChecked(geoAlarm.isAlarmOn);
-
-			if (geoAlarm.isAlarmOn) {
-				disableUI();
-			}
-
+			onOffAlarm.setChecked(geoAlarm.isAlarmOn);
 		}
+
+		if (geoAlarm.isAlarmOn) {
+			disableUI();
+		}
+
+		// Events
+		onOffAlarm
+				.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+					@Override
+					public void onCheckedChanged(CompoundButton buttonView,
+							boolean isChecked) {
+						MainActivity.this.switchOnOffAlarm_onChange(buttonView,
+								isChecked);
+					}
+				});
 	}
 
 	private void loadAd() {
@@ -223,8 +232,8 @@ public class MainActivity extends FragmentActivity implements
 		trackEvent("ui_action", "button_press", "set_ringtone", null);
 	}
 
-	public void togglebuttonOnOffAlarm_onClick(View v) {
-		geoAlarm.isAlarmOn = ((ToggleButton) v).isChecked();
+	public void switchOnOffAlarm_onChange(View v, boolean isChecked) {
+		geoAlarm.isAlarmOn = isChecked;
 
 		if (geoAlarm.isAlarmOn) {
 			geoAlarm.zone = gMap.getProjection().getVisibleRegion().latLngBounds;

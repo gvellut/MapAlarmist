@@ -4,19 +4,20 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical" >
-    
-    <com.google.android.gms.ads.AdView android:id="@+id/adView"
-                         android:layout_width="wrap_content"
-                         android:layout_height="wrap_content"
-                         ads:adUnitId="ca-app-pub-5796283935972448/1876791411"
-                         ads:adSize="SMART_BANNER"/>
-    
+
+    <com.google.android.gms.ads.AdView
+        android:id="@+id/adView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        ads:adSize="SMART_BANNER"
+        ads:adUnitId="ca-app-pub-5796283935972448/1876791411" />
+
     <fragment
         android:id="@+id/map"
         android:layout_width="match_parent"
-        android:layout_height="0dip"
-        android:layout_weight="1"
+        android:layout_height="0dp"
         android:layout_margin="5dp"
+        android:layout_weight="1"
         class="com.google.android.gms.maps.SupportMapFragment" />
 
     <Button
@@ -27,18 +28,23 @@
         android:text="@string/set_ringtone" />
 
     <CheckBox
-        android:onClick="checkboxUseVibrate_onClick"
         android:id="@+id/checkboxUseVibrate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:onClick="checkboxUseVibrate_onClick"
         android:text="@string/use_vibrate" />
 
-    <ToggleButton android:onClick="togglebuttonOnOffAlarm_onClick"
-        android:id="@+id/togglebuttonOnOffAlarm"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textOff="@string/set_alarm"
-        android:textOn="@string/disable_alarm"
-        android:checked="false" />
+    <RelativeLayout android:layout_width="match_parent" 
+        android:layout_height="wrap_content" 
+        android:paddingRight="4dp" android:paddingBottom="4dp">
+        <Switch
+            android:id="@+id/switchOnOffAlarm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:checked="false"
+            android:textOff="@string/set_alarm"
+            android:textOn="@string/disable_alarm" />
+    </RelativeLayout>
 
 </LinearLayout>
