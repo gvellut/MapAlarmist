@@ -1,5 +1,7 @@
 package com.vellut.geoalarm;
 
+import java.util.Collections;
+
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.PendingIntent;
@@ -13,12 +15,18 @@ import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.Switch;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.analytics.tracking.android.EasyTracker;
 import com.google.analytics.tracking.android.MapBuilder;
@@ -38,6 +46,7 @@ import com.google.android.gms.maps.GoogleMap.OnCameraChangeListener;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 
 public class MainActivity extends FragmentActivity implements
 		ConnectionCallbacks, OnConnectionFailedListener,
@@ -56,8 +65,9 @@ public class MainActivity extends FragmentActivity implements
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		// FIXME add menu options Stop Alarm (needs notification id)
-		// FIXME remove notification when clicking on Turn off Alarm
 		// FIXME test for wifi loc on
+		// FIXME Done keyboar to OK of dialog
+		// FIXME deletion of list bookmarks
 
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
@@ -91,7 +101,7 @@ public class MainActivity extends FragmentActivity implements
 		super.onPause();
 
 		if (!geoAlarm.isAlarmOn) { // already saved otherwise
-			geoAlarm.zone = gMap.getProjection().getVisibleRegion().latLngBounds;
+			geoAlarm.zone = getCurrentMapBounds();
 			geoAlarm.savePreferences(this);
 		}
 
@@ -129,8 +139,7 @@ public class MainActivity extends FragmentActivity implements
 				gMap.setOnCameraChangeListener(new OnCameraChangeListener() {
 					@Override
 					public void onCameraChange(CameraPosition pos) {
-						gMap.moveCamera(CameraUpdateFactory.newLatLngBounds(
-								geoAlarm.zone, 0));
+						showMapLocation(geoAlarm.zone);
 						gMap.setOnCameraChangeListener(null);
 					}
 				});
@@ -159,12 +168,17 @@ public class MainActivity extends FragmentActivity implements
 					}
 				});
 	}
+	
+	private void showMapLocation(LatLngBounds zone) {
+		gMap.moveCamera(CameraUpdateFactory.newLatLngBounds(
+				zone, 0));
+	}
 
 	private void loadAd() {
 		AdView adView = (AdView) this.findViewById(R.id.adView);
 		AdRequest adRequest = new AdRequest.Builder()
 				.addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
-				.addTestDevice("1CDF12C571A695FA0214F29BC40703DA").build();
+				.addTestDevice("2EB20C5804AA87DD1C845CC0D2C79CF8").build();
 		adView.loadAd(adRequest);
 	}
 
@@ -186,6 +200,8 @@ public class MainActivity extends FragmentActivity implements
 	public boolean onPrepareOptionsMenu(Menu menu) {
 		menu.findItem(R.id.action_current_location).setEnabled(
 				!geoAlarm.isAlarmOn);
+		menu.findItem(R.id.action_load_location)
+				.setEnabled(!geoAlarm.isAlarmOn);
 		return true;
 	}
 
@@ -196,6 +212,12 @@ public class MainActivity extends FragmentActivity implements
 			zoomOnCurrentPosition();
 			trackEvent("ui_action", "button_press", "zoom_on_current_position",
 					null);
+			return true;
+		case R.id.action_load_location:
+			showLoadLocationDialog();
+			return true;
+		case R.id.action_save_location:
+			showSaveLocationDialog();
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);
@@ -213,6 +235,77 @@ public class MainActivity extends FragmentActivity implements
 			}
 			gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
 		}
+	}
+
+	private void showLoadLocationDialog() {
+		String[] items = new String[geoAlarm.savedLocations.size()];
+		for (int i = 0; i < items.length; i++) {
+			items[i] = geoAlarm.savedLocations.get(i).description;
+		}
+
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setView(new TextView(this)).setTitle("Load location")
+				.setItems(items, new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int which) {
+						showMapLocation(geoAlarm.savedLocations.get(which).zone);
+					}
+				}).setNegativeButton(R.string.cancel, null);
+		showDialog(builder.create());
+	}
+
+	private void showSaveLocationDialog() {
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		LayoutInflater inflater = getLayoutInflater();
+
+		builder.setTitle("Hello")
+				.setView(inflater.inflate(R.layout.dialog_savelocation, null))
+				.setPositiveButton(R.string.ok, null)
+				.setNegativeButton(R.string.cancel, null);
+
+		AlertDialog dialog = builder.create();
+		dialog.setOnShowListener(new DialogInterface.OnShowListener() {
+			@Override
+			public void onShow(DialogInterface dialogi) {
+				final AlertDialog dialog = (AlertDialog) dialogi;
+				Button b = dialog.getButton(DialogInterface.BUTTON_POSITIVE);
+				b.setOnClickListener(new View.OnClickListener() {
+					@Override
+					public void onClick(View v) {
+						Log.d(GeoAlarmUtils.APPTAG, "Saving Location");
+						EditText edit = (EditText) dialog
+								.findViewById(R.id.editTextLocationName);
+						String text = edit.getText().toString();
+						if (!TextUtils.isEmpty(text)) {
+							SavedLocation savedLocation = new SavedLocation(
+									text, getCurrentMapBounds());
+							MainActivity.this.geoAlarm.savedLocations
+									.add(savedLocation);
+							Collections
+									.sort(MainActivity.this.geoAlarm.savedLocations);
+
+							dialog.dismiss();
+							Toast t = Toast.makeText(MainActivity.this,
+									getString(R.string.location_saved_success),
+									Toast.LENGTH_SHORT);
+							t.show();
+						} else {
+							// do not dismiss; show error toast at the top of
+							// the screen
+							Toast t = Toast
+									.makeText(
+											MainActivity.this,
+											getString(R.string.bad_location_description),
+											Toast.LENGTH_SHORT);
+							t.setGravity(Gravity.TOP
+									| Gravity.CENTER_HORIZONTAL, 0, 20);
+							t.show();
+						}
+					}
+				});
+			}
+		});
+		showDialog(dialog);
+
 	}
 
 	public void buttonSetRingtone_onClick(View v) {
@@ -236,7 +329,7 @@ public class MainActivity extends FragmentActivity implements
 		geoAlarm.isAlarmOn = isChecked;
 
 		if (geoAlarm.isAlarmOn) {
-			geoAlarm.zone = gMap.getProjection().getVisibleRegion().latLngBounds;
+			geoAlarm.zone = getCurrentMapBounds();
 			geoAlarm.setAlarm(this, locationClient, this);
 			geoAlarm.savePreferences(this);
 
@@ -253,6 +346,10 @@ public class MainActivity extends FragmentActivity implements
 		trackEvent("ui_action", "button_press", "set_alarm", 1l);
 	}
 
+	private LatLngBounds getCurrentMapBounds() {
+		return gMap.getProjection().getVisibleRegion().latLngBounds;
+	}
+
 	private void stopAlarm() {
 		// Stop
 		// nothing to do
@@ -265,7 +362,6 @@ public class MainActivity extends FragmentActivity implements
 	}
 
 	private void disableUI() {
-		// TODO disable map fragment
 		gMap.getUiSettings().setAllGesturesEnabled(false);
 		findViewById(R.id.checkboxUseVibrate).setEnabled(false);
 		findViewById(R.id.buttonSetRingtone).setEnabled(false);
@@ -353,14 +449,6 @@ public class MainActivity extends FragmentActivity implements
 			zoomOnCurrentPosition();
 			zoomOnCurrentPosition = false;
 		}
-
-		// FIXME alarm rings when the app opens inside the fence
-		/*
-		 * if (geoAlarm.isAlarmOn) { try { // set alarm geofence if needed (in
-		 * case user removed it using // Force Stop) geoAlarm.setAlarm(this,
-		 * locationClient, this); } catch (Exception e) {
-		 * Log.e(GeoAlarmUtils.APPTAG, "Error setting alarm on start", e); } }
-		 */
 	}
 
 	// Called by Location Services if the connection to the location client
@@ -432,7 +520,7 @@ public class MainActivity extends FragmentActivity implements
 		}
 	}
 
-	// Define a DialogFragment that displays the error dialog
+	// Define a DialogFragment that displays a dialog
 	public static class GeoAlarmDialogFragment extends DialogFragment {
 		private Dialog mDialog;
 
@@ -440,6 +528,12 @@ public class MainActivity extends FragmentActivity implements
 		public GeoAlarmDialogFragment() {
 			super();
 			mDialog = null;
+		}
+
+		@Override
+		public void onCreate(Bundle bundle) {
+			super.onCreate(bundle);
+			setRetainInstance(true);
 		}
 
 		// Set the dialog to display

@@ -1,5 +1,6 @@
 package com.vellut.geoalarm;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +19,11 @@ import com.google.android.gms.location.LocationClient.OnAddGeofencesResultListen
 import com.google.android.gms.location.LocationClient.OnRemoveGeofencesResultListener;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import com.vellut.geoalarm.io.LatLngBoundsDeserializer;
+import com.vellut.geoalarm.io.LatLngBoundsSerializer;
 
 public class GeoAlarm {
 
@@ -26,6 +32,19 @@ public class GeoAlarm {
 	public Uri ringtoneUri;
 	public LatLngBounds zone;
 	public boolean isUseVibrate;
+	public ArrayList<SavedLocation> savedLocations;
+
+	private GsonBuilder builder;
+
+	public GeoAlarm() {
+		this.savedLocations = new ArrayList<SavedLocation>();
+
+		builder = new GsonBuilder();
+		builder.registerTypeAdapter(LatLngBounds.class,
+				new LatLngBoundsSerializer());
+		builder.registerTypeAdapter(LatLngBounds.class,
+				new LatLngBoundsDeserializer());
+	}
 
 	public void restorePreferences(Context context) {
 		SharedPreferences settings = context.getSharedPreferences(
@@ -69,6 +88,17 @@ public class GeoAlarm {
 			} else {
 				ringtoneUri = Uri.parse(sRingtoneUri);
 			}
+
+			String sSavedLocations = settings.getString(
+					GeoAlarmUtils.PREF_SAVED_LOCATIONS, null);
+			if (sSavedLocations != null) {
+				try {
+					savedLocations = deserializeFromString(sSavedLocations);
+				} catch (Exception ex) {
+					Log.e(GeoAlarmUtils.APPTAG, "Error getting saved locations", ex);
+				}
+			}
+
 		}
 
 		isUseVibrate = settings.getBoolean(GeoAlarmUtils.PREF_USE_VIBRATE,
@@ -107,8 +137,26 @@ public class GeoAlarm {
 		}
 		editor.putBoolean(GeoAlarmUtils.PREF_USE_VIBRATE, isUseVibrate);
 		editor.putBoolean(GeoAlarmUtils.PREF_IS_ALARM_ON, isAlarmOn);
+		editor.putString(GeoAlarmUtils.PREF_SAVED_LOCATIONS,
+				serializeToString(savedLocations));
 
 		editor.commit();
+	}
+
+	private String serializeToString(ArrayList<SavedLocation> locations) {
+		Gson gson = builder.create();
+		Type type = new TypeToken<ArrayList<SavedLocation>>() {
+		}.getType();
+		String ser = gson.toJson(locations, type);
+		return ser;
+	}
+
+	private ArrayList<SavedLocation> deserializeFromString(String json) {
+		Gson gson = builder.create();
+		Type type = new TypeToken<ArrayList<SavedLocation>>() {
+		}.getType();
+		Object obj = gson.fromJson(json, type);
+		return (ArrayList<SavedLocation>) obj;
 	}
 
 	public void setAlarm(Context context, LocationClient locationClient,
@@ -118,7 +166,7 @@ public class GeoAlarm {
 		geofences.add(buildGeofence());
 		locationClient.addGeofences(geofences, transitionPendingIntent,
 				listener);
-		
+
 	}
 
 	public void disableAlarm(Context context, LocationClient locationClient,
@@ -136,7 +184,8 @@ public class GeoAlarm {
 					ringtoneUri.toString());
 		}
 		intent.putExtra(GeoAlarmUtils.EXTRA_USE_VIBRATE, isUseVibrate);
-		intent.putExtra(GeoAlarmUtils.EXTRA_ALARM_SET_TIME, SystemClock.elapsedRealtime());
+		intent.putExtra(GeoAlarmUtils.EXTRA_ALARM_SET_TIME,
+				SystemClock.elapsedRealtime());
 
 		return PendingIntent.getBroadcast(context, 0, intent,
 				PendingIntent.FLAG_UPDATE_CURRENT);

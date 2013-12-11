@@ -27,6 +27,7 @@ public class GeoAlarmUtils {
 	public final static String PREF_EAST_LON = "eastLon";
 	public final static String PREF_USE_VIBRATE = "useVibrate";
 	public final static String PREF_IS_ALARM_ON = "isAlarmOn";
+	public final static String PREF_SAVED_LOCATIONS = "savedLocations";
 
     
 }

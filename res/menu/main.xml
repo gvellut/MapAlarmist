@@ -6,5 +6,17 @@
         android:orderInCategory="100"
         android:showAsAction="ifRoom"
         android:title="@string/action_current_location"/>
+    
+    <item
+        android:id="@+id/action_save_location"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="@string/action_save_location"/>
+    
+    <item
+        android:id="@+id/action_load_location"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="@string/action_load_location"/>
 
 </menu>
