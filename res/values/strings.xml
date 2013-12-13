@@ -19,6 +19,7 @@
     <string name="location_name_hint">Location description</string>
     <string name="location_saved_success">Location saved</string>
     <string name="bad_location_description">Enter a description for the location</string>
-    
+    <string name="load_location_title">Load location</string>
+    <string name="save_location_title">Save location</string>
 
 </resources>

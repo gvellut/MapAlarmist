@@ -16,16 +16,23 @@ import android.support.v4.app.FragmentActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 
 import com.google.analytics.tracking.android.EasyTracker;
@@ -168,10 +175,9 @@ public class MainActivity extends FragmentActivity implements
 					}
 				});
 	}
-	
+
 	private void showMapLocation(LatLngBounds zone) {
-		gMap.moveCamera(CameraUpdateFactory.newLatLngBounds(
-				zone, 0));
+		gMap.moveCamera(CameraUpdateFactory.newLatLngBounds(zone, 0));
 	}
 
 	private void loadAd() {
@@ -238,18 +244,47 @@ public class MainActivity extends FragmentActivity implements
 	}
 
 	private void showLoadLocationDialog() {
-		String[] items = new String[geoAlarm.savedLocations.size()];
-		for (int i = 0; i < items.length; i++) {
-			items[i] = geoAlarm.savedLocations.get(i).description;
-		}
-
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setView(new TextView(this)).setTitle("Load location")
-				.setItems(items, new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int which) {
-						showMapLocation(geoAlarm.savedLocations.get(which).zone);
+		LayoutInflater inflater = getLayoutInflater();
+		View dialogView = inflater.inflate(R.layout.dialog_loadlocation, null);
+		final ArrayAdapter<SavedLocation> adapter = new ArrayAdapter<SavedLocation>(
+				this, android.R.layout.simple_list_item_1, android.R.id.text1,
+				geoAlarm.savedLocations);
+
+		ListView listSavedLocations = (ListView) dialogView
+				.findViewById(R.id.listSavedLocations);
+		listSavedLocations.setAdapter(adapter);
+		SwipeDismissListViewTouchListener touchListener = new SwipeDismissListViewTouchListener(
+				listSavedLocations,
+				new SwipeDismissListViewTouchListener.DismissCallbacks() {
+					@Override
+					public boolean canDismiss(int position) {
+						return true;
 					}
-				}).setNegativeButton(R.string.cancel, null);
+
+					@Override
+					public void onDismiss(ListView listView,
+							int[] reverseSortedPositions) {
+						for (int position : reverseSortedPositions) {
+							adapter.remove(adapter.getItem(position));
+						}
+						adapter.notifyDataSetChanged();
+					}
+				});
+		listSavedLocations.setOnTouchListener(touchListener);
+		listSavedLocations.setOnScrollListener(touchListener
+				.makeScrollListener());
+		listSavedLocations.setOnItemClickListener(new OnItemClickListener() {
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view,
+					int position, long id) {
+				showMapLocation(geoAlarm.savedLocations.get(position).zone);
+			}
+		});
+
+		builder.setView(dialogView).setTitle(
+				getString(R.string.load_location_title));
+		builder.setNegativeButton(R.string.cancel, null);
 		showDialog(builder.create());
 	}
 
@@ -257,7 +292,7 @@ public class MainActivity extends FragmentActivity implements
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		LayoutInflater inflater = getLayoutInflater();
 
-		builder.setTitle("Hello")
+		builder.setTitle(getString(R.string.save_location_title))
 				.setView(inflater.inflate(R.layout.dialog_savelocation, null))
 				.setPositiveButton(R.string.ok, null)
 				.setNegativeButton(R.string.cancel, null);
@@ -265,47 +300,71 @@ public class MainActivity extends FragmentActivity implements
 		AlertDialog dialog = builder.create();
 		dialog.setOnShowListener(new DialogInterface.OnShowListener() {
 			@Override
+			// Need to put listeners here since subviews are not ready before
 			public void onShow(DialogInterface dialogi) {
 				final AlertDialog dialog = (AlertDialog) dialogi;
 				Button b = dialog.getButton(DialogInterface.BUTTON_POSITIVE);
 				b.setOnClickListener(new View.OnClickListener() {
 					@Override
 					public void onClick(View v) {
-						Log.d(GeoAlarmUtils.APPTAG, "Saving Location");
-						EditText edit = (EditText) dialog
-								.findViewById(R.id.editTextLocationName);
-						String text = edit.getText().toString();
-						if (!TextUtils.isEmpty(text)) {
-							SavedLocation savedLocation = new SavedLocation(
-									text, getCurrentMapBounds());
-							MainActivity.this.geoAlarm.savedLocations
-									.add(savedLocation);
-							Collections
-									.sort(MainActivity.this.geoAlarm.savedLocations);
-
-							dialog.dismiss();
-							Toast t = Toast.makeText(MainActivity.this,
-									getString(R.string.location_saved_success),
-									Toast.LENGTH_SHORT);
-							t.show();
-						} else {
-							// do not dismiss; show error toast at the top of
-							// the screen
-							Toast t = Toast
-									.makeText(
-											MainActivity.this,
-											getString(R.string.bad_location_description),
-											Toast.LENGTH_SHORT);
-							t.setGravity(Gravity.TOP
-									| Gravity.CENTER_HORIZONTAL, 0, 20);
-							t.show();
-						}
+						saveLocation(dialog);
 					}
 				});
+				
+				EditText editTextLocationName = (EditText) dialog
+						.findViewById(R.id.editTextLocationName);
+				editTextLocationName
+						.setOnEditorActionListener(new OnEditorActionListener() {
+							public boolean onEditorAction(TextView v, int actionId,
+									KeyEvent event) {
+								if ((event != null && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER))
+										|| (actionId == EditorInfo.IME_ACTION_DONE)) {
+									return !saveLocation(dialog);
+								}
+								return false;
+							}
+						});
 			}
 		});
+		
+
 		showDialog(dialog);
 
+	}
+	
+	private boolean saveLocation(AlertDialog dialog) {
+		Log.d(GeoAlarmUtils.APPTAG, "Saving Location");
+		EditText edit = (EditText) dialog
+				.findViewById(R.id.editTextLocationName);
+		String text = edit.getText().toString();
+		if (!TextUtils.isEmpty(text)) {
+			SavedLocation savedLocation = new SavedLocation(
+					text, getCurrentMapBounds());
+			MainActivity.this.geoAlarm.savedLocations
+					.add(savedLocation);
+			Collections
+					.sort(MainActivity.this.geoAlarm.savedLocations);
+
+			dialog.dismiss();
+			Toast t = Toast.makeText(MainActivity.this,
+					getString(R.string.location_saved_success),
+					Toast.LENGTH_SHORT);
+			t.show();
+			return true;
+		} else {
+			// do not dismiss; show error toast at the top of
+			// the screen
+			Toast t = Toast
+					.makeText(
+							MainActivity.this,
+							getString(R.string.bad_location_description),
+							Toast.LENGTH_SHORT);
+			t.setGravity(Gravity.TOP
+					| Gravity.CENTER_HORIZONTAL, 0, 20);
+			t.show();
+			return false;
+		}
+	
 	}
 
 	public void buttonSetRingtone_onClick(View v) {
