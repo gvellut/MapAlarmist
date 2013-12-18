@@ -4,6 +4,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -95,7 +96,8 @@ public class GeoAlarm {
 				try {
 					savedLocations = deserializeFromString(sSavedLocations);
 				} catch (Exception ex) {
-					Log.e(GeoAlarmUtils.APPTAG, "Error getting saved locations", ex);
+					Log.e(GeoAlarmUtils.APPTAG,
+							"Error getting saved locations", ex);
 				}
 			}
 
@@ -161,19 +163,29 @@ public class GeoAlarm {
 
 	public void setAlarm(Context context, LocationClient locationClient,
 			OnAddGeofencesResultListener listener) {
-		PendingIntent transitionPendingIntent = getTransitionPendingIntent(context);
+		/*PendingIntent transitionPendingIntent = getTransitionPendingIntent(context);
 		List<Geofence> geofences = new ArrayList<Geofence>();
 		geofences.add(buildGeofence());
 		locationClient.addGeofences(geofences, transitionPendingIntent,
-				listener);
+				listener);*/
 
+		AlarmManager am = (AlarmManager) context
+				.getSystemService(Context.ALARM_SERVICE);
+		PendingIntent alarmWakeUpPendingIntent = getAlarmWakeUpPendingIntent(context);
+		am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, 2 * 60 * 1000,
+				2 * 60 * 1000, alarmWakeUpPendingIntent);
 	}
 
 	public void disableAlarm(Context context, LocationClient locationClient,
 			OnRemoveGeofencesResultListener listener) {
-		List<String> geofenceIds = new ArrayList<String>();
+		/*List<String> geofenceIds = new ArrayList<String>();
 		geofenceIds.add(GeoAlarmUtils.GEOFENCE_REQUEST_ID);
-		locationClient.removeGeofences(geofenceIds, listener);
+		locationClient.removeGeofences(geofenceIds, listener);*/
+
+		AlarmManager am = (AlarmManager) context
+				.getSystemService(Context.ALARM_SERVICE);
+		PendingIntent alarmWakeUpPendingIntent = getAlarmWakeUpPendingIntent(context);
+		am.cancel(alarmWakeUpPendingIntent);
 	}
 
 	private PendingIntent getTransitionPendingIntent(Context context) {
@@ -191,6 +203,11 @@ public class GeoAlarm {
 				PendingIntent.FLAG_UPDATE_CURRENT);
 	}
 
+	private PendingIntent getAlarmWakeUpPendingIntent(Context context) {
+		Intent intent = new Intent(context, AlarmWakeUpBroadcastReceiver.class);
+		return PendingIntent.getBroadcast(context, 0, intent, 0);
+	}
+
 	private Geofence buildGeofence() {
 		LatLng center = zone.getCenter();
 		double dLng = Math.abs(zone.northeast.longitude
@@ -205,7 +222,8 @@ public class GeoAlarm {
 
 		return new Geofence.Builder()
 				.setRequestId(GeoAlarmUtils.GEOFENCE_REQUEST_ID)
-				.setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+				.setTransitionTypes(
+						Geofence.GEOFENCE_TRANSITION_ENTER)
 				.setExpirationDuration(Geofence.NEVER_EXPIRE)
 				.setCircularRegion(center.latitude, center.longitude, radius)
 				.build();

@@ -14,7 +14,6 @@
     <!-- External storage for caching. -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Maps API needs OpenGL ES 2.0. -->
@@ -52,9 +51,14 @@
             </intent-filter>
         </receiver>
         
+        
+        <receiver android:name="com.vellut.geoalarm.AlarmWakeUpBroadcastReceiver" >
+        </receiver>
+ 		<service android:name="com.vellut.geoalarm.AlarmWakeUpService" >
+        </service>
+        
         <receiver android:name="com.vellut.geoalarm.ReceiveTransitionsBroadcastReceiver" >
         </receiver>
-
         <service
             android:name="com.vellut.geoalarm.ReceiveTransitionsIntentService"
             android:exported="false"

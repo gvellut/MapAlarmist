@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Safe Zzz</string>
+    <string name="app_name">Map Alarmist</string>
     <string name="set_ringtone">Choose ringtone</string>
     <string name="use_vibrate">Vibrate</string>
     <string name="ringtone_picker_title">Select ringtone for alarm</string>
@@ -9,7 +9,7 @@
     <string name="geofence_transition_notification_text">Click to return to app</string>
     <string name="geofence_transition_notification_title">Safe Zzz alarm triggered</string>
     <string name="geofence_transition_error_detail">Geofencing Error: %d</string>
-    <string name="welcome">Welcome to Safe Zzz.\n\nUse the map to select the area where the alarm should be triggered and select an alarm sound.\n\nFlip the switch at the bottom when ready.</string>
+    <string name="welcome">Welcome to Map Alarmist.\n\nUse the map to select the area where the alarm should be triggered and select a sound.\n\nFlip the switch at the bottom to set the alarm.</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="set_alarm">OFF</string>

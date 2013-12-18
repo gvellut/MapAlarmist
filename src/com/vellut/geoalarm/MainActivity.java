@@ -73,8 +73,6 @@ public class MainActivity extends FragmentActivity implements
 	protected void onCreate(Bundle savedInstanceState) {
 		// FIXME add menu options Stop Alarm (needs notification id)
 		// FIXME test for wifi loc on
-		// FIXME Done keyboar to OK of dialog
-		// FIXME deletion of list bookmarks
 
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
@@ -147,6 +145,7 @@ public class MainActivity extends FragmentActivity implements
 					@Override
 					public void onCameraChange(CameraPosition pos) {
 						showMapLocation(geoAlarm.zone);
+						Log.d(GeoAlarmUtils.APPTAG, "Showing zone saved in SharedPrefs");
 						gMap.setOnCameraChangeListener(null);
 					}
 				});
