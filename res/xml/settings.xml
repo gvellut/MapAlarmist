@@ -1,0 +1,11 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <ListPreference
+        android:defaultValue="@string/pref_location_technique_defaultvalue"
+        android:dialogTitle="@string/pref_header_location_technique"
+        android:entries="@array/pref_location_technique_entries"
+        android:entryValues="@array/pref_location_technique_values"
+        android:key="locationTechnique"
+        android:title="@string/pref_header_location_technique" />
+
+</PreferenceScreen>

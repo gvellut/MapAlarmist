@@ -13,12 +13,11 @@ public class GeoAlarmUtils {
 	public static final String EXTRA_RINGTONE_URI = "RingtoneUri";
 	public static final String EXTRA_ALARM_SET_TIME = "AlarmSetTime";
 	
-	public static final long MIN_DTIME = 5000;
+	public static final long MIN_DTIME = 10000;
 	
 	public final static int RINGTONE_PICKER_REQUEST_CODE = 1;
 	public final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 2;
 	
-	public final static String PREFERENCES_FILE_NAME = "com.vellut.geoalarm.Preferences";
 	public final static String PREF_IS_FIRST_TIME_RUN = "isFirstTimeRun";
 	public final static String PREF_RINGTONE_URI = "ringtoneUri";
 	public final static String PREF_NORTH_LAT = "northLat";
@@ -28,6 +27,11 @@ public class GeoAlarmUtils {
 	public final static String PREF_USE_VIBRATE = "useVibrate";
 	public final static String PREF_IS_ALARM_ON = "isAlarmOn";
 	public final static String PREF_SAVED_LOCATIONS = "savedLocations";
-
-    
+	public final static String PREF_LOCATION_TECHNIQUE = "locationTechnique";
+	public final static String PREF_IS_IN_ZONE = "isInZone";
+	public final static String PREF_ALARM_SET_TIME = "alarmSetTime";
+	
+	public final static String LOCATION_TECHNIQUE_LOW_POWER = "lowerpower";
+	public final static String LOCATION_TECHNIQUE_BALANCED_POWER = "balancedpowacc";
+	public final static String LOCATION_TECHNIQUE_HIGH_ACCURACY = "highaccuracy";  
 }

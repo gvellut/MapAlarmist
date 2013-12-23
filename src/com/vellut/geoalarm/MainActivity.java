@@ -8,9 +8,11 @@ import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.media.RingtoneManager;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
 import android.text.TextUtils;
@@ -57,7 +59,8 @@ import com.google.android.gms.maps.model.LatLngBounds;
 
 public class MainActivity extends FragmentActivity implements
 		ConnectionCallbacks, OnConnectionFailedListener,
-		OnAddGeofencesResultListener, OnRemoveGeofencesResultListener {
+		OnAddGeofencesResultListener, OnRemoveGeofencesResultListener,
+		SharedPreferences.OnSharedPreferenceChangeListener {
 
 	private boolean zoomOnCurrentPosition;
 	private GeoAlarm geoAlarm;
@@ -71,11 +74,10 @@ public class MainActivity extends FragmentActivity implements
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		// FIXME add menu options Stop Alarm (needs notification id)
-		// FIXME test for wifi loc on
-
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+
+		PreferenceManager.setDefaultValues(this, R.xml.settings, false);
 
 		locationClient = new LocationClient(this, this, this);
 		gMap = ((SupportMapFragment) getSupportFragmentManager()
@@ -145,7 +147,8 @@ public class MainActivity extends FragmentActivity implements
 					@Override
 					public void onCameraChange(CameraPosition pos) {
 						showMapLocation(geoAlarm.zone);
-						Log.d(GeoAlarmUtils.APPTAG, "Showing zone saved in SharedPrefs");
+						Log.d(GeoAlarmUtils.APPTAG,
+								"Showing zone saved in SharedPrefs");
 						gMap.setOnCameraChangeListener(null);
 					}
 				});
@@ -224,6 +227,9 @@ public class MainActivity extends FragmentActivity implements
 		case R.id.action_save_location:
 			showSaveLocationDialog();
 			return true;
+		case R.id.action_settings:
+			showSettings();
+			return true;
 		default:
 			return super.onOptionsItemSelected(item);
 		}
@@ -286,7 +292,7 @@ public class MainActivity extends FragmentActivity implements
 				dialog.dismiss();
 			}
 		});
-		
+
 		showDialog(dialog);
 	}
 
@@ -331,6 +337,12 @@ public class MainActivity extends FragmentActivity implements
 
 		showDialog(dialog);
 
+	}
+	
+	private void showSettings() {
+		Intent intent = new Intent();
+		intent.setClass(this, SettingsActivity.class);
+		startActivity(intent);
 	}
 
 	private boolean saveLocation(AlertDialog dialog) {
@@ -611,4 +623,11 @@ public class MainActivity extends FragmentActivity implements
 		easyTracker.send(MapBuilder.createEvent(category, action, label, value)
 				.build());
 	}
+
+	@Override
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+			String key) {
+		geoAlarm.reloadPreferenceForKey(this, key);
+	}
+
 }

@@ -9,15 +9,18 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.location.LocationProvider;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.SystemClock;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.LocationClient;
 import com.google.android.gms.location.LocationClient.OnAddGeofencesResultListener;
 import com.google.android.gms.location.LocationClient.OnRemoveGeofencesResultListener;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.gson.Gson;
@@ -34,6 +37,9 @@ public class GeoAlarm {
 	public LatLngBounds zone;
 	public boolean isUseVibrate;
 	public ArrayList<SavedLocation> savedLocations;
+	public String locationTechnique;
+	public boolean isInZone;
+	public long alarmSetTime;
 
 	private GsonBuilder builder;
 
@@ -48,8 +54,8 @@ public class GeoAlarm {
 	}
 
 	public void restorePreferences(Context context) {
-		SharedPreferences settings = context.getSharedPreferences(
-				GeoAlarmUtils.PREFERENCES_FILE_NAME, Context.MODE_PRIVATE);
+		SharedPreferences settings = PreferenceManager
+				.getDefaultSharedPreferences(context);
 
 		isFirstTimeRun = settings.getBoolean(
 				GeoAlarmUtils.PREF_IS_FIRST_TIME_RUN, true);
@@ -81,6 +87,10 @@ public class GeoAlarm {
 				}
 			}
 			ringtoneUri = defaultUri;
+			locationTechnique = context
+					.getString(R.string.pref_location_technique_defaultvalue);
+			isInZone = false;
+			alarmSetTime = 0;
 		} else {
 			String sRingtoneUri = settings.getString(
 					GeoAlarmUtils.PREF_RINGTONE_URI, null);
@@ -107,6 +117,21 @@ public class GeoAlarm {
 				false);
 
 		isAlarmOn = settings.getBoolean(GeoAlarmUtils.PREF_IS_ALARM_ON, false);
+
+		locationTechnique = settings
+				.getString(
+						GeoAlarmUtils.PREF_LOCATION_TECHNIQUE,
+						context.getString(R.string.pref_location_technique_defaultvalue));
+		
+		isInZone = settings.getBoolean(GeoAlarmUtils.PREF_IS_IN_ZONE, false);
+		alarmSetTime = settings.getLong(GeoAlarmUtils.PREF_ALARM_SET_TIME, 0);
+	}
+
+	public void reloadPreferenceForKey(Context context, String key) {
+		if (key.equals(GeoAlarmUtils.PREF_LOCATION_TECHNIQUE)) {
+			locationTechnique = PreferenceManager.getDefaultSharedPreferences(
+					context).getString(key, "");
+		}
 	}
 
 	private double getDouble(String sDouble) {
@@ -118,8 +143,8 @@ public class GeoAlarm {
 	}
 
 	public void savePreferences(Context context) {
-		SharedPreferences settings = context.getSharedPreferences(
-				GeoAlarmUtils.PREFERENCES_FILE_NAME, 0);
+		SharedPreferences settings = PreferenceManager
+				.getDefaultSharedPreferences(context);
 		SharedPreferences.Editor editor = settings.edit();
 
 		editor.putBoolean(GeoAlarmUtils.PREF_IS_FIRST_TIME_RUN, isFirstTimeRun);
@@ -141,7 +166,20 @@ public class GeoAlarm {
 		editor.putBoolean(GeoAlarmUtils.PREF_IS_ALARM_ON, isAlarmOn);
 		editor.putString(GeoAlarmUtils.PREF_SAVED_LOCATIONS,
 				serializeToString(savedLocations));
+		editor.putLong(GeoAlarmUtils.PREF_ALARM_SET_TIME, alarmSetTime);
 
+		// no save for locationTechnique : managed by PreferenceManager
+		
+		editor.commit();
+	}
+	
+	public void saveLocationZone(Context context) {
+		SharedPreferences settings = PreferenceManager
+				.getDefaultSharedPreferences(context);
+		SharedPreferences.Editor editor = settings.edit();
+		
+		editor.putBoolean(GeoAlarmUtils.PREF_IS_IN_ZONE, isInZone);
+		
 		editor.commit();
 	}
 
@@ -160,27 +198,45 @@ public class GeoAlarm {
 		Object obj = gson.fromJson(json, type);
 		return (ArrayList<SavedLocation>) obj;
 	}
-
+	
+	public int getLocationPriority() {
+		if(locationTechnique.equals(GeoAlarmUtils.LOCATION_TECHNIQUE_LOW_POWER)) {
+			return LocationRequest.PRIORITY_LOW_POWER;
+		} else if(locationTechnique.equals(GeoAlarmUtils.LOCATION_TECHNIQUE_BALANCED_POWER)) {
+			return LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;
+		} else if(locationTechnique.equals(GeoAlarmUtils.LOCATION_TECHNIQUE_HIGH_ACCURACY)) {
+			return LocationRequest.PRIORITY_HIGH_ACCURACY;
+		} else {
+			Log.d(GeoAlarmUtils.APPTAG, "Should not happen: No Power");
+			return LocationRequest.PRIORITY_NO_POWER;
+		}
+	}
+	
 	public void setAlarm(Context context, LocationClient locationClient,
 			OnAddGeofencesResultListener listener) {
-		/*PendingIntent transitionPendingIntent = getTransitionPendingIntent(context);
-		List<Geofence> geofences = new ArrayList<Geofence>();
-		geofences.add(buildGeofence());
-		locationClient.addGeofences(geofences, transitionPendingIntent,
-				listener);*/
+		/*
+		 * PendingIntent transitionPendingIntent =
+		 * getTransitionPendingIntent(context); List<Geofence> geofences = new
+		 * ArrayList<Geofence>(); geofences.add(buildGeofence());
+		 * locationClient.addGeofences(geofences, transitionPendingIntent,
+		 * listener);
+		 */
 
 		AlarmManager am = (AlarmManager) context
 				.getSystemService(Context.ALARM_SERVICE);
 		PendingIntent alarmWakeUpPendingIntent = getAlarmWakeUpPendingIntent(context);
 		am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, 2 * 60 * 1000,
 				2 * 60 * 1000, alarmWakeUpPendingIntent);
+		alarmSetTime = SystemClock.elapsedRealtime();
 	}
 
 	public void disableAlarm(Context context, LocationClient locationClient,
 			OnRemoveGeofencesResultListener listener) {
-		/*List<String> geofenceIds = new ArrayList<String>();
-		geofenceIds.add(GeoAlarmUtils.GEOFENCE_REQUEST_ID);
-		locationClient.removeGeofences(geofenceIds, listener);*/
+		/*
+		 * List<String> geofenceIds = new ArrayList<String>();
+		 * geofenceIds.add(GeoAlarmUtils.GEOFENCE_REQUEST_ID);
+		 * locationClient.removeGeofences(geofenceIds, listener);
+		 */
 
 		AlarmManager am = (AlarmManager) context
 				.getSystemService(Context.ALARM_SERVICE);
@@ -222,8 +278,7 @@ public class GeoAlarm {
 
 		return new Geofence.Builder()
 				.setRequestId(GeoAlarmUtils.GEOFENCE_REQUEST_ID)
-				.setTransitionTypes(
-						Geofence.GEOFENCE_TRANSITION_ENTER)
+				.setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
 				.setExpirationDuration(Geofence.NEVER_EXPIRE)
 				.setCircularRegion(center.latitude, center.longitude, radius)
 				.build();
