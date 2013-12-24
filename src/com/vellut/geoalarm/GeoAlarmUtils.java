@@ -36,9 +36,9 @@ public class GeoAlarmUtils {
 	public final static String PREF_IS_IN_ZONE = "isInZone";
 	public final static String PREF_ALARM_SET_TIME = "alarmSetTime";
 	
-	public final static String LOCATION_TECHNIQUE_LOW_POWER = "lowpower";
-	public final static String LOCATION_TECHNIQUE_BALANCED_POWER = "balancedpowacc";
-	public final static String LOCATION_TECHNIQUE_HIGH_ACCURACY = "highaccuracy";  
+	public final static int LOCATION_TECHNIQUE_LOW_POWER = R.string.lowpower;
+	public final static int LOCATION_TECHNIQUE_BALANCED_POWER = R.string.balancedpowacc;
+	public final static int LOCATION_TECHNIQUE_HIGH_ACCURACY = R.string.highaccuracy;  
 	
 
 	// Analytics

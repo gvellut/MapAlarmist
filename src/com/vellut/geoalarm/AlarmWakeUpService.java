@@ -67,7 +67,7 @@ public class AlarmWakeUpService extends Service implements ConnectionCallbacks,
 
 		geoAlarm = new GeoAlarm();
 		geoAlarm.restorePreferences(this);
-		int priority = geoAlarm.getLocationPriority();
+		int priority = geoAlarm.getLocationPriority(this);
 
 		long timeout = 60 * 1000;
 		HandlerThread thread = new HandlerThread("AlarmWakeUpServiceBackground");

@@ -28,11 +28,13 @@ public class SettingsActivity extends Activity implements
 	
 	@Override
 	protected void onStart() {
+		super.onStart();
 		EasyTracker.getInstance(this).activityStart(this);
 	}
 	
 	@Override 
 	protected void onStop() {
+		super.onStop();
 		EasyTracker.getInstance(this).activityStop(this);
 	}
 

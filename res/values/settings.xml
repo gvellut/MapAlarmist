@@ -7,11 +7,15 @@
     </array>
     
     <array name="pref_location_technique_values">
-        <item>lowpower</item>
-        <item>balancedpowacc</item>
-        <item>highaccuracy</item>
+        <item>@string/lowpower</item>
+        <item>@string/balancedpowacc</item>
+        <item>@string/highaccuracy</item>
     </array>
     
-    <string name="pref_location_technique_defaultvalue">balancedpowacc</string>
+    <string name="pref_location_technique_defaultvalue">@string/balancedpowacc</string>
+    
+    <string name="lowpower">lowpower</string>
+    <string name="balancedpowacc">balancedpowacc</string>
+    <string name="highaccuracy">highaccuracy</string>
     
 </resources>

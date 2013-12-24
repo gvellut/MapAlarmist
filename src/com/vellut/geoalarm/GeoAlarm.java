@@ -199,12 +199,12 @@ public class GeoAlarm {
 		return (ArrayList<SavedLocation>) obj;
 	}
 	
-	public int getLocationPriority() {
-		if(locationTechnique.equals(GeoAlarmUtils.LOCATION_TECHNIQUE_LOW_POWER)) {
+	public int getLocationPriority(Context context) {
+		if(locationTechnique.equals(context.getString(GeoAlarmUtils.LOCATION_TECHNIQUE_LOW_POWER))) {
 			return LocationRequest.PRIORITY_LOW_POWER;
-		} else if(locationTechnique.equals(GeoAlarmUtils.LOCATION_TECHNIQUE_BALANCED_POWER)) {
+		} else if(locationTechnique.equals(context.getString(GeoAlarmUtils.LOCATION_TECHNIQUE_BALANCED_POWER))) {
 			return LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;
-		} else if(locationTechnique.equals(GeoAlarmUtils.LOCATION_TECHNIQUE_HIGH_ACCURACY)) {
+		} else if(locationTechnique.equals(context.getString(GeoAlarmUtils.LOCATION_TECHNIQUE_HIGH_ACCURACY))) {
 			return LocationRequest.PRIORITY_HIGH_ACCURACY;
 		} else {
 			Log.d(GeoAlarmUtils.APPTAG, "Should not happen: No Power");
