@@ -218,7 +218,7 @@ public class MainActivity extends FragmentActivity implements
 		switch (item.getItemId()) {
 		case R.id.action_current_location:
 			zoomOnCurrentPosition();
-			trackEvent("ui_action", "button_press", "zoom_on_current_position",
+			GeoAlarmUtils.trackEvent(this, "ui_action", "button_press", "zoom_on_current_position",
 					null);
 			return true;
 		case R.id.action_load_location:
@@ -389,7 +389,7 @@ public class MainActivity extends FragmentActivity implements
 		startActivityForResult(intent,
 				GeoAlarmUtils.RINGTONE_PICKER_REQUEST_CODE);
 
-		trackEvent("ui_action", "button_press", "set_ringtone", null);
+		GeoAlarmUtils.trackEvent(this, "ui_action", "button_press", "set_ringtone", null);
 	}
 
 	public void switchOnOffAlarm_onChange(View v, boolean isChecked) {
@@ -410,7 +410,7 @@ public class MainActivity extends FragmentActivity implements
 
 		supportInvalidateOptionsMenu();
 
-		trackEvent("ui_action", "button_press", "set_alarm", 1l);
+		GeoAlarmUtils.trackEvent(this, "ui_action", "button_press", "set_alarm", 1l);
 	}
 
 	private LatLngBounds getCurrentMapBounds() {
@@ -425,7 +425,7 @@ public class MainActivity extends FragmentActivity implements
 	public void checkboxUseVibrate_onClick(View v) {
 		geoAlarm.isUseVibrate = ((CheckBox) v).isChecked();
 
-		trackEvent("ui_action", "button_press", "use_vibrate", null);
+		GeoAlarmUtils.trackEvent(this, "ui_action", "button_press", "use_vibrate", null);
 	}
 
 	private void disableUI() {
@@ -615,14 +615,6 @@ public class MainActivity extends FragmentActivity implements
 		}
 	}
 
-	// Analytics
-
-	private void trackEvent(String category, String action, String label,
-			Long value) {
-		EasyTracker easyTracker = EasyTracker.getInstance(this);
-		easyTracker.send(MapBuilder.createEvent(category, action, label, value)
-				.build());
-	}
 
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,

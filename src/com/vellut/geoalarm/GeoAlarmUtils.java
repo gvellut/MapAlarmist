@@ -1,5 +1,10 @@
 package com.vellut.geoalarm;
 
+import android.content.Context;
+
+import com.google.analytics.tracking.android.EasyTracker;
+import com.google.analytics.tracking.android.MapBuilder;
+
 public class GeoAlarmUtils {
 	public static final String APPTAG = "GeoAlarm";
 	
@@ -34,4 +39,14 @@ public class GeoAlarmUtils {
 	public final static String LOCATION_TECHNIQUE_LOW_POWER = "lowpower";
 	public final static String LOCATION_TECHNIQUE_BALANCED_POWER = "balancedpowacc";
 	public final static String LOCATION_TECHNIQUE_HIGH_ACCURACY = "highaccuracy";  
+	
+
+	// Analytics
+
+	public static void trackEvent(Context context, String category, String action, String label,
+			Long value) {
+		EasyTracker easyTracker = EasyTracker.getInstance(context);
+		easyTracker.send(MapBuilder.createEvent(category, action, label, value)
+				.build());
+	}
 }

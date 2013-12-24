@@ -1,5 +1,7 @@
 package com.vellut.geoalarm;
 
+import com.google.analytics.tracking.android.EasyTracker;
+
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -22,6 +24,16 @@ public class SettingsActivity extends Activity implements
 		settingsFragment = new SettingsFragment();
 		getFragmentManager().beginTransaction()
 				.replace(android.R.id.content, settingsFragment).commit();
+	}
+	
+	@Override
+	protected void onStart() {
+		EasyTracker.getInstance(this).activityStart(this);
+	}
+	
+	@Override 
+	protected void onStop() {
+		EasyTracker.getInstance(this).activityStop(this);
 	}
 
 	@Override
@@ -56,6 +68,9 @@ public class SettingsActivity extends Activity implements
 			String key) {
 		Preference pref = settingsFragment.findPreference(key);
 		updateSummary(pref);
+		
+		GeoAlarmUtils.trackEvent(this, "ui_action", "button_press", "changed_location_technique",
+				null);
 	}
 
 	private static void initSummary(Preference p) {
