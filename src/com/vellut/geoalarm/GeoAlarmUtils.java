@@ -31,7 +31,7 @@ public class GeoAlarmUtils {
 	public final static String PREF_IS_IN_ZONE = "isInZone";
 	public final static String PREF_ALARM_SET_TIME = "alarmSetTime";
 	
-	public final static String LOCATION_TECHNIQUE_LOW_POWER = "lowerpower";
+	public final static String LOCATION_TECHNIQUE_LOW_POWER = "lowpower";
 	public final static String LOCATION_TECHNIQUE_BALANCED_POWER = "balancedpowacc";
 	public final static String LOCATION_TECHNIQUE_HIGH_ACCURACY = "highaccuracy";  
 }

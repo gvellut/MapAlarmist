@@ -7,7 +7,7 @@
     <string name="ringtone_picker_title">Select ringtone for alarm</string>
     <string name="action_current_location">Position</string>
     <string name="geofence_transition_notification_text">Click to return to app</string>
-    <string name="geofence_transition_notification_title">Safe Zzz alarm triggered</string>
+    <string name="geofence_transition_notification_title">Map Alarmist has been triggered</string>
     <string name="geofence_transition_error_detail">Geofencing Error: %d</string>
     <string name="welcome">Welcome to Map Alarmist.\n\nUse the map to select the area where the alarm should be triggered and select a sound.\n\nFlip the switch at the bottom to set the alarm.</string>
     <string name="ok">OK</string>
