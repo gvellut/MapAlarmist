@@ -27,21 +27,25 @@
         android:onClick="buttonSetRingtone_onClick"
         android:text="@string/set_ringtone" />
 
-    <CheckBox
-        android:id="@+id/checkboxUseVibrate"
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:onClick="checkboxUseVibrate_onClick"
-        android:text="@string/use_vibrate" />
+        android:paddingTop="2dp"
+        android:paddingRight="3dp" >
 
-    <RelativeLayout android:layout_width="match_parent" 
-        android:layout_height="wrap_content" 
-        android:paddingRight="4dp" android:paddingBottom="4dp">
+        <CheckBox
+            android:id="@+id/checkboxUseVibrate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:onClick="checkboxUseVibrate_onClick"
+            android:text="@string/use_vibrate" />
+
         <Switch
             android:id="@+id/switchOnOffAlarm"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
+            android:layout_alignParentRight="true"
             android:checked="false"
             android:textOff="@string/set_alarm"
             android:textOn="@string/disable_alarm" />
