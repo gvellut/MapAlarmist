@@ -218,8 +218,8 @@ public class MainActivity extends FragmentActivity implements
 		switch (item.getItemId()) {
 		case R.id.action_current_location:
 			zoomOnCurrentPosition();
-			GeoAlarmUtils.trackEvent(this, "ui_action", "button_press", "zoom_on_current_position",
-					null);
+			GeoAlarmUtils.trackEvent(this, "ui_action", "button_press",
+					"zoom_on_current_position", null);
 			return true;
 		case R.id.action_load_location:
 			showLoadLocationDialog();
@@ -238,13 +238,15 @@ public class MainActivity extends FragmentActivity implements
 	private void zoomOnCurrentPosition() {
 		if (isGooglePlayServicesConnected()) {
 			Location currentLocation = locationClient.getLastLocation();
-			LatLng latLng = new LatLng(currentLocation.getLatitude(),
-					currentLocation.getLongitude());
-			float zoom = gMap.getCameraPosition().zoom;
-			if (zoom < 14) {
-				zoom = 14;
+			if (currentLocation != null) {
+				LatLng latLng = new LatLng(currentLocation.getLatitude(),
+						currentLocation.getLongitude());
+				float zoom = gMap.getCameraPosition().zoom;
+				if (zoom < 14) {
+					zoom = 14;
+				}
+				gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
 			}
-			gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
 		}
 	}
 
@@ -338,7 +340,7 @@ public class MainActivity extends FragmentActivity implements
 		showDialog(dialog);
 
 	}
-	
+
 	private void showSettings() {
 		Intent intent = new Intent();
 		intent.setClass(this, SettingsActivity.class);
@@ -389,7 +391,8 @@ public class MainActivity extends FragmentActivity implements
 		startActivityForResult(intent,
 				GeoAlarmUtils.RINGTONE_PICKER_REQUEST_CODE);
 
-		GeoAlarmUtils.trackEvent(this, "ui_action", "button_press", "set_ringtone", null);
+		GeoAlarmUtils.trackEvent(this, "ui_action", "button_press",
+				"set_ringtone", null);
 	}
 
 	public void switchOnOffAlarm_onChange(View v, boolean isChecked) {
@@ -410,7 +413,8 @@ public class MainActivity extends FragmentActivity implements
 
 		supportInvalidateOptionsMenu();
 
-		GeoAlarmUtils.trackEvent(this, "ui_action", "button_press", "set_alarm", 1l);
+		GeoAlarmUtils.trackEvent(this, "ui_action", "button_press",
+				"set_alarm", 1l);
 	}
 
 	private LatLngBounds getCurrentMapBounds() {
@@ -425,7 +429,8 @@ public class MainActivity extends FragmentActivity implements
 	public void checkboxUseVibrate_onClick(View v) {
 		geoAlarm.isUseVibrate = ((CheckBox) v).isChecked();
 
-		GeoAlarmUtils.trackEvent(this, "ui_action", "button_press", "use_vibrate", null);
+		GeoAlarmUtils.trackEvent(this, "ui_action", "button_press",
+				"use_vibrate", null);
 	}
 
 	private void disableUI() {
@@ -614,7 +619,6 @@ public class MainActivity extends FragmentActivity implements
 			return mDialog;
 		}
 	}
-
 
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
