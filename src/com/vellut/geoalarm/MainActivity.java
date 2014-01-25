@@ -12,6 +12,7 @@ import android.content.SharedPreferences;
 import android.location.Location;
 import android.media.RingtoneManager;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.preference.PreferenceManager;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
@@ -23,6 +24,7 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -38,7 +40,6 @@ import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 
 import com.google.analytics.tracking.android.EasyTracker;
-import com.google.analytics.tracking.android.MapBuilder;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.common.ConnectionResult;
@@ -48,6 +49,8 @@ import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.location.LocationClient;
 import com.google.android.gms.location.LocationClient.OnAddGeofencesResultListener;
 import com.google.android.gms.location.LocationClient.OnRemoveGeofencesResultListener;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationStatusCodes;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -60,10 +63,11 @@ import com.google.android.gms.maps.model.LatLngBounds;
 public class MainActivity extends FragmentActivity implements
 		ConnectionCallbacks, OnConnectionFailedListener,
 		OnAddGeofencesResultListener, OnRemoveGeofencesResultListener,
-		SharedPreferences.OnSharedPreferenceChangeListener {
+		SharedPreferences.OnSharedPreferenceChangeListener, LocationListener {
 
 	private boolean zoomOnCurrentPosition;
 	private GeoAlarm geoAlarm;
+	private boolean isLocationUpdating;
 
 	private LocationClient locationClient;
 
@@ -75,6 +79,9 @@ public class MainActivity extends FragmentActivity implements
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+		
 		setContentView(R.layout.activity_main);
 
 		PreferenceManager.setDefaultValues(this, R.xml.settings, false);
@@ -236,18 +243,78 @@ public class MainActivity extends FragmentActivity implements
 	}
 
 	private void zoomOnCurrentPosition() {
-		if (isGooglePlayServicesConnected()) {
-			Location currentLocation = locationClient.getLastLocation();
-			if (currentLocation != null) {
-				LatLng latLng = new LatLng(currentLocation.getLatitude(),
-						currentLocation.getLongitude());
-				float zoom = gMap.getCameraPosition().zoom;
-				if (zoom < 14) {
-					zoom = 14;
+		// do not launch if location currently updating
+		if (isGooglePlayServicesConnected() && locationClient.isConnected()
+				&& !isLocationUpdating) {
+			setProgressBarIndeterminateVisibility(true);
+
+			int locationTimeout = 20000;
+
+			LocationRequest lr = new LocationRequest();
+			lr.setNumUpdates(1).setFastestInterval(1).setInterval(1)
+					.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+					.setExpirationDuration(locationTimeout);
+			locationClient.requestLocationUpdates(lr, this);
+
+			isLocationUpdating = true;
+
+			new CountDownTimer(locationTimeout, locationTimeout) {
+				public void onTick(long millisUntilFinished) {
 				}
-				gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
-			}
+
+				public void onFinish() {
+					// Timeout reached before we could get a fix
+					setProgressBarIndeterminateVisibility(false);
+					if (isLocationUpdating) {
+						isLocationUpdating = false;
+						locationClient.removeLocationUpdates(MainActivity.this);
+
+						Location location = locationClient.getLastLocation();
+						if (location != null) {
+							setCurrentLocation(location);
+						} else {
+							AlertDialog.Builder builder = new AlertDialog.Builder(
+									MainActivity.this);
+							builder.setMessage(R.string.timeout_location)
+									.setPositiveButton(
+											R.string.ok,
+											new DialogInterface.OnClickListener() {
+												public void onClick(
+														DialogInterface dialog,
+														int id) {
+
+												}
+											});
+							// Create the AlertDialog object and return it
+							showDialog(builder.create());
+						}
+					}
+				}
+			}.start();
+
+		} else {
+			zoomOnCurrentPosition = true;
 		}
+	}
+
+	@Override
+	public void onLocationChanged(Location location) {
+		setProgressBarIndeterminateVisibility(false);
+
+		if (isLocationUpdating) {
+			isLocationUpdating = false;
+			setCurrentLocation(location);
+		}
+	}
+
+	private void setCurrentLocation(Location location) {
+		LatLng latLng = new LatLng(location.getLatitude(),
+				location.getLongitude());
+		float zoom = gMap.getCameraPosition().zoom;
+		if (zoom < 14) {
+			zoom = 14;
+		}
+		gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
 	}
 
 	private void showLoadLocationDialog() {

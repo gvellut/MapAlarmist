@@ -22,6 +22,7 @@
     <string name="load_location_title">Load location</string>
     <string name="save_location_title">Save location</string>
     <string name="action_settings">Settings</string>
+    <string name="timeout_location">Unable to obtain location</string>
     
     <string name="pref_header_location_technique">Location technique</string>
 
